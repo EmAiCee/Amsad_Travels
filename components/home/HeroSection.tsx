@@ -80,6 +80,7 @@ export default function HeroSection() {
                   <option>3 Travelers</option>
                   <option>4+ Travelers</option>
                 </select>
+               
               </div>
               <Button variant="primary" className="w-full h-[52px]">
                 <Search size={20} />

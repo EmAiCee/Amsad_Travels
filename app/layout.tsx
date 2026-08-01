@@ -1,30 +1,31 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import Header from '@/components/common/Header'
-import Footer from '@/components/common/Footer'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import Header from '@/components/common/Header';
+import Footer from '@/components/common/Footer';
+import { AuthProvider } from '@/context/AuthContext';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'TravelHub - Book Flights, Hotels & Holiday Packages',
-  description: 'Discover the world with TravelHub. Find the best flights, hotels, and holiday packages at unbeatable prices.',
-}
+  title: 'Amsad Travels - Book Flights, Hotels & Holiday Packages',
+  description: 'Discover the world with Amsad Travels. Find the best flights, hotels, and holiday packages at unbeatable prices.',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Header />
-        <main className="min-h-screen">
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <Header />
+          <main className="min-h-screen">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'  // ✅ Import router
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
@@ -9,7 +10,9 @@ import Input from '@/components/common/Input'
 import Container from '@/components/ui/Container'
 
 export default function LoginPage() {
+  const router = useRouter()  // ✅ Initialize router
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)  // ✅ Add loading state
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -19,10 +22,42 @@ export default function LoginPage() {
     password: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic
-    console.log('Login attempt:', formData)
+    setIsLoading(true)
+    setErrors({ email: '', password: '' })
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
+
+      // Store tokens
+      localStorage.setItem('accessToken', data.data.accessToken)
+      localStorage.setItem('refreshToken', data.data.refreshToken)
+      localStorage.setItem('user', JSON.stringify(data.data.user))
+
+      // Redirect to dashboard
+      router.push('/dashboard')
+    } catch (error) {
+      // ✅ Better error handling
+      setErrors({ 
+        email: error instanceof Error ? error.message : 'Login failed', 
+        password: '' 
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -52,6 +87,7 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 error={errors.email}
+                required
               />
 
               <div className="relative">
@@ -63,6 +99,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   error={errors.password}
+                  required
                 />
                 <button
                   type="button"
@@ -83,8 +120,13 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <Button type="submit" variant="primary" className="w-full">
-                Sign In
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full"
+                disabled={isLoading}  // ✅ Disable while loading
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
 

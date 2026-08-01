@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'  // ✅ Import router
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react'
@@ -8,9 +9,10 @@ import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
 import Container from '@/components/ui/Container'
 
-
 export default function RegisterPage() {
+  const router = useRouter()  // ✅ Initialize router
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)  // ✅ Add loading state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,9 +21,47 @@ export default function RegisterPage() {
     confirmPassword: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Registration attempt:', formData)
+    setIsLoading(true)
+
+    // ✅ Optional: Add password confirmation validation
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed')
+      }
+
+      // Store tokens
+      localStorage.setItem('accessToken', data.data.accessToken)
+      localStorage.setItem('refreshToken', data.data.refreshToken)
+      localStorage.setItem('user', JSON.stringify(data.data.user))
+
+      // Redirect to dashboard
+      router.push('/dashboard')
+    } catch (error) {
+      // ✅ Better error handling
+      console.error('Registration error:', error)
+      // Optionally show error to user
+      alert(error instanceof Error ? error.message : 'Registration failed')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -50,6 +90,7 @@ export default function RegisterPage() {
                 icon={<User size={18} />}
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required
               />
 
               <Input
@@ -59,6 +100,7 @@ export default function RegisterPage() {
                 icon={<Mail size={18} />}
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required
               />
 
               <Input
@@ -78,6 +120,7 @@ export default function RegisterPage() {
                   icon={<Lock size={18} />}
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  required
                 />
                 <button
                   type="button"
@@ -95,10 +138,11 @@ export default function RegisterPage() {
                 icon={<Lock size={18} />}
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                required
               />
 
               <div className="flex items-start gap-2 text-sm text-gray-600">
-                <input type="checkbox" className="mt-1 rounded" />
+                <input type="checkbox" className="mt-1 rounded" required />
                 <span>
                   I agree to the{' '}
                   <Link href="/terms" className="text-brand-primary hover:text-red-600">
@@ -111,8 +155,13 @@ export default function RegisterPage() {
                 </span>
               </div>
 
-              <Button type="submit" variant="primary" className="w-full">
-                Create Account
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full"
+                disabled={isLoading}  // ✅ Disable while loading
+              >
+                {isLoading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
 
